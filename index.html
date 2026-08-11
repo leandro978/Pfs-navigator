@@ -289,7 +289,38 @@ function distance(lat1, lon1, lat2, lon2) {
    VISUALIZZA PFS
 ========================= */
 
-function showPFS() {
+functfunction showPFS() {
+  const search = document.getElementById("search").value
+    .toLowerCase()
+    .trim();
+
+  const results = pfsList.filter(pfs => {
+    const code = String(pfs.code || "").toLowerCase();
+    const comune = String(pfs.comune || "").toLowerCase();
+    const nome = String(pfs.nome || "").toLowerCase();
+
+    return (
+      code.includes(search) ||
+      comune.includes(search) ||
+      nome.includes(search)
+    );
+  });
+
+  const container = document.getElementById("results");
+
+  if (results.length === 0) {
+    container.innerHTML = "<p>Nessun PFS trovato.</p>";
+    return;
+  }
+
+  container.innerHTML = results.map(pfs => `
+    <div class="pfs-card">
+      <h3>${pfs.code || ""}</h3>
+      <p><strong>Comune:</strong> ${pfs.comune || ""}</p>
+      <p><strong>Nome:</strong> ${pfs.nome || ""}</p>
+    </div>
+  `).join("");
+}
   const search = document.getElementById("search").value.trim().toLowerCase();
 
   const results = pfsList.filter(pfs => {
