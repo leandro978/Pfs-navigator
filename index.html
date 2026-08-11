@@ -290,6 +290,31 @@ function distance(lat1, lon1, lat2, lon2) {
 ========================= */
 
 function showPFS() {
+  const search = document.getElementById("search").value.trim().toLowerCase();
+
+  const results = pfsList.filter(pfs => {
+    return (
+      String(pfs.code || "").toLowerCase().includes(search) ||
+      String(pfs.comune || "").toLowerCase().includes(search) ||
+      String(pfs.nome || "").toLowerCase().includes(search)
+    );
+  });
+
+  const container = document.getElementById("results");
+
+  if (results.length === 0) {
+    container.innerHTML = "<p>Nessun PFS trovato.</p>";
+    return;
+  }
+
+  container.innerHTML = results.map(pfs => `
+    <div class="pfs-item">
+      <strong>${pfs.code || ""}</strong>
+      <div>${pfs.comune || ""}</div>
+      <div>${pfs.nome || ""}</div>
+    </div>
+  `).join("");
+}
 
   const container =
     document.getElementById("results");
