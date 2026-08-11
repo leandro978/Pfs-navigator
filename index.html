@@ -1,8 +1,419 @@
-📍 PFS Navigator
-Ricerca PFS per comune o per codice
-Comune
-Tutti i comuni
-Cerca PFS
-0 PFS
-Azzera
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>PFS Navigator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: #f2f4f7;
+    color: #1d1d1f;
+}
+
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 25px 16px 40px;
+}
+
+h1 {
+    text-align: center;
+    margin: 10px 0 8px;
+    font-size: 30px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+input,
+select,
+button {
+    width: 100%;
+    min-height: 50px;
+    border-radius: 12px;
+    font-size: 17px;
+}
+
+input,
+select {
+    border: 1px solid #ccc;
+    padding: 12px;
+    background: white;
+}
+
+button {
+    border: 0;
+    background: #007aff;
+    color: white;
+    font-weight: 600;
+    margin-top: 12px;
+}
+
+button.secondary {
+    background: #e5e5ea;
+    color: #1d1d1f;
+}
+
+.result {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+
+.result h3 {
+    margin: 0 0 8px;
+}
+
+.result p {
+    margin: 5px 0;
+    color: #555;
+}
+
+.result a {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    background: #34c759;
+    color: white;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 12px;
+    font-weight: 600;
+}
+
+#risultati {
+    margin-top: 15px;
+}
+
+.empty {
+    text-align: center;
+    color: #777;
+    padding: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>📍 PFS Navigator</h1>
+
+    <div class="subtitle">
+        Ricerca PFS per comune o per codice
+    </div>
+
+    <div class="card">
+
+        <label for="comune">Comune</label>
+
+        <select id="comune">
+            <option value="">Tutti i comuni</option>
+        </select>
+
+        <label for="codice" style="margin-top:18px;">
+            Codice PFS
+        </label>
+
+        <input
+            type="text"
+            id="codice"
+            placeholder="Es. NA/10/02E22"
+            autocomplete="off"
+        >
+
+        <button onclick="cercaPFS()">
+            🔎 Cerca PFS
+        </button>
+
+        <button class="secondary" onclick="azzera()">
+            ✕ Azzera
+        </button>
+
+    </div>
+
+    <div id="risultati"></div>
+
+</div>
+
+<script>
+
+/*
+=========================================================
+DATI PFS
+=========================================================
+
+IMPORTANTE:
+
+Qui verranno inseriti i dati del file Excel
+PFS_OpenFiber_Completo.
+
+Il formato è:
+
+{
+    comune: "NOME COMUNE",
+    codice: "CODICE PFS",
+    lat: "LATITUDINE",
+    lon: "LONGITUDINE"
+}
+
+=========================================================
+*/
+
+const pfs = [
+
+    /*
+    ESEMPIO:
+
+    {
+        comune: "CASALNUOVO DI NAPOLI",
+        codice: "NA/10/02E22",
+        lat: "40.909000",
+        lon: "14.355000"
+    },
+
+    */
+
+];
+
+
+/* =====================================================
+   CREAZIONE ELENCO COMUNI
+===================================================== */
+
+function caricaComuni() {
+
+    const select = document.getElementById("comune");
+
+    const comuni = [...new Set(
+        pfs
+            .map(item => item.comune)
+            .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    comuni.forEach(comune => {
+
+        const option = document.createElement("option");
+
+        option.value = comune;
+        option.textContent = comune;
+
+        select.appendChild(option);
+
+    });
+}
+
+
+/* =====================================================
+   RICERCA
+===================================================== */
+
+function cercaPFS() {
+
+    const comune = document
+        .getElementById("comune")
+        .value
+        .trim()
+        .toLowerCase();
+
+    const codice = document
+        .getElementById("codice")
+        .value
+        .trim()
+        .toLowerCase();
+
+    const risultati = document.getElementById("risultati");
+
+    risultati.innerHTML = "";
+
+    if (!comune && !codice) {
+
+        mostraTutti();
+
+        return;
+    }
+
+    const trovati = pfs.filter(item => {
+
+        const comuneItem = String(item.comune || "")
+            .toLowerCase();
+
+        const codiceItem = String(item.codice || "")
+            .toLowerCase();
+
+        const comuneOK =
+            !comune ||
+            comuneItem === comune ||
+            comuneItem.includes(comune);
+
+        const codiceOK =
+            !codice ||
+            codiceItem.includes(codice);
+
+        return comuneOK && codiceOK;
+
+    });
+
+    mostraRisultati(trovati);
+}
+
+
+/* =====================================================
+   MOSTRA TUTTI
+===================================================== */
+
+function mostraTutti() {
+
+    const risultati = document.getElementById("risultati");
+
+    risultati.innerHTML = "";
+
+    if (pfs.length === 0) {
+
+        risultati.innerHTML = `
+            <div class="card empty">
+                Nessun dato PFS caricato.
+            </div>
+        `;
+
+        return;
+    }
+
+    mostraRisultati(pfs);
+}
+
+
+/* =====================================================
+   MOSTRA RISULTATI
+===================================================== */
+
+function mostraRisultati(lista) {
+
+    const risultati = document.getElementById("risultati");
+
+    risultati.innerHTML = "";
+
+    if (lista.length === 0) {
+
+        risultati.innerHTML = `
+            <div class="card empty">
+                ❌ Nessun PFS trovato
+            </div>
+        `;
+
+        return;
+    }
+
+    lista.forEach(item => {
+
+        const lat = String(item.lat || "").replace(",", ".");
+        const lon = String(item.lon || "").replace(",", ".");
+
+        const div = document.createElement("div");
+
+        div.className = "result";
+
+        div.innerHTML = `
+            <h3>📍 ${escapeHTML(item.codice || "PFS")}</h3>
+
+            <p>
+                <strong>Comune:</strong>
+                ${escapeHTML(item.comune || "-")}
+            </p>
+
+            <p>
+                <strong>Coordinate:</strong>
+                ${escapeHTML(lat)} , ${escapeHTML(lon)}
+            </p>
+
+            ${
+                lat && lon
+                ?
+                `
+                <a
+                    href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + "," + lon)}"
+                    target="_blank"
+                >
+                    🗺️ Apri su Google Maps
+                </a>
+                `
+                :
+                ""
+            }
+        `;
+
+        risultati.appendChild(div);
+
+    });
+}
+
+
+/* =====================================================
+   AZZERA
+===================================================== */
+
+function azzera() {
+
+    document.getElementById("comune").value = "";
+
+    document.getElementById("codice").value = "";
+
+    document.getElementById("risultati").innerHTML = "";
+
+}
+
+
+/* =====================================================
+   SICUREZZA TESTO
+===================================================== */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+/* =====================================================
+   AVVIO
+===================================================== */
+
+caricaComuni();
+
+</script>
+
+</body>
+</html>
 
