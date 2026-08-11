@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>PFS Navigator</title>
 
 <style>
@@ -74,6 +75,11 @@ button {
   color: white;
 }
 
+.red {
+  background: #dc2626;
+  color: white;
+}
+
 input {
   width: 100%;
   padding: 13px;
@@ -97,17 +103,19 @@ label {
 }
 
 .pfs h3 {
-  margin: 0 0 5px;
+  margin: 0 0 8px;
 }
 
 .distance {
   color: #2563eb;
   font-weight: 700;
+  margin-top: 6px;
 }
 
 .actions {
   display: flex;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .actions button {
@@ -117,6 +125,7 @@ label {
 .small {
   font-size: 13px;
   color: #6b7280;
+  margin-top: 6px;
 }
 
 #status {
@@ -149,6 +158,7 @@ label {
 
   </div>
 
+
   <div class="card">
 
     <h2>🔎 Cerca PFS</h2>
@@ -156,33 +166,55 @@ label {
     <input
       id="search"
       type="text"
-      placeholder="Codice PFS o comune..."
+      placeholder="Cerca per codice PFS o Comune..."
       oninput="showPFS()"
     >
 
   </div>
+
 
   <div class="card">
 
     <h2>➕ Aggiungi PFS</h2>
 
     <label>Codice PFS</label>
-    <input id="pfsCode" placeholder="Es. NA/10/02E22">
+
+    <input
+      id="pfsCode"
+      placeholder="Es. NA/10/02E22"
+    >
 
     <label>Comune</label>
-    <input id="pfsCity" placeholder="Es. Caserta">
+
+    <input
+      id="pfsCity"
+      placeholder="Es. Casalnuovo"
+    >
 
     <label>Latitudine</label>
-    <input id="pfsLat" type="number" step="any" placeholder="Es. 41.073">
+
+    <input
+      id="pfsLat"
+      type="number"
+      step="any"
+      placeholder="Es. 41.073"
+    >
 
     <label>Longitudine</label>
-    <input id="pfsLng" type="number" step="any" placeholder="Es. 14.334">
+
+    <input
+      id="pfsLng"
+      type="number"
+      step="any"
+      placeholder="Es. 14.334"
+    >
 
     <button class="green" onclick="addPFS()">
       Salva PFS
     </button>
 
   </div>
+
 
   <div class="card">
 
@@ -193,6 +225,7 @@ label {
   </div>
 
 </div>
+
 
 <script>
 
@@ -210,26 +243,54 @@ let pfsList = JSON.parse(
 
 
 /* =========================
+   NORMALIZZA TESTO
+   Permette di cercare:
+   Casalnuovo
+   casalnuovo
+   CASALNUOVO
+   Casalnuòvo
+========================= */
+
+function normalizeText(text) {
+
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+}
+
+
+/* =========================
    POSIZIONE
 ========================= */
 
 function getLocation() {
 
-  const status = document.getElementById("status");
+  const status =
+    document.getElementById("status");
 
   if (!navigator.geolocation) {
-    status.innerHTML = "❌ GPS non disponibile";
+
+    status.innerHTML =
+      "❌ GPS non disponibile";
+
     return;
   }
 
-  status.innerHTML = "📡 Ricerca posizione...";
+  status.innerHTML =
+    "📡 Ricerca posizione...";
 
   navigator.geolocation.getCurrentPosition(
 
     function(position) {
 
-      userLat = position.coords.latitude;
-      userLng = position.coords.longitude;
+      userLat =
+        position.coords.latitude;
+
+      userLng =
+        position.coords.longitude;
 
       status.innerHTML =
         "✅ Posizione trovata";
@@ -238,7 +299,7 @@ function getLocation() {
 
     },
 
-    function(error) {
+    function() {
 
       status.innerHTML =
         "❌ Impossibile ottenere la posizione. Controlla i permessi GPS.";
@@ -252,6 +313,7 @@ function getLocation() {
     }
 
   );
+
 }
 
 
@@ -270,18 +332,19 @@ function distance(lat1, lon1, lat2, lon2) {
     (lon2 - lon1) * Math.PI / 180;
 
   const a =
-    Math.sin(dLat/2) ** 2 +
-    Math.cos(lat1 * Math.PI/180) *
-    Math.cos(lat2 * Math.PI/180) *
-    Math.sin(dLon/2) ** 2;
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
 
   const c =
     2 * Math.atan2(
       Math.sqrt(a),
-      Math.sqrt(1-a)
+      Math.sqrt(1 - a)
     );
 
   return R * c;
+
 }
 
 
@@ -289,90 +352,55 @@ function distance(lat1, lon1, lat2, lon2) {
    VISUALIZZA PFS
 ========================= */
 
-functfunction showPFS() {
-  const search = document.getElementById("search").value
-    .toLowerCase()
-    .trim();
+function showPFS() {
 
-  const results = pfsList.filter(pfs => {
-    const code = String(pfs.code || "").toLowerCase();
-    const comune = String(pfs.comune || "").toLowerCase();
-    const nome = String(pfs.nome || "").toLowerCase();
+  const container =
+    document.getElementById("results");
+
+  const search =
+    normalizeText(
+      document.getElementById("search").value
+    );
+
+
+  /*
+     Supporta sia i vecchi PFS salvati
+     con "city" sia quelli con "comune".
+  */
+
+  let list = pfsList.filter(function(p) {
+
+    const code =
+      normalizeText(p.code);
+
+    const comune =
+      normalizeText(
+        p.comune || p.city
+      );
+
+    const nome =
+      normalizeText(p.nome);
 
     return (
       code.includes(search) ||
       comune.includes(search) ||
       nome.includes(search)
     );
+
   });
 
-  const container = document.getElementById("results");
 
-  if (results.length === 0) {
-    container.innerHTML = "<p>Nessun PFS trovato.</p>";
-    return;
-  }
+  /* =========================
+     CALCOLO DISTANZA
+  ========================= */
 
-  container.innerHTML = results.map(pfs => `
-    <div class="pfs-card">
-      <h3>${pfs.code || ""}</h3>
-      <p><strong>Comune:</strong> ${pfs.comune || ""}</p>
-      <p><strong>Nome:</strong> ${pfs.nome || ""}</p>
-    </div>
-  `).join("");
-}
-  const search = document.getElementById("search").value.trim().toLowerCase();
+  list.forEach(function(p) {
 
-  const results = pfsList.filter(pfs => {
-    return (
-      String(pfs.code || "").toLowerCase().includes(search) ||
-      String(pfs.comune || "").toLowerCase().includes(search) ||
-      String(pfs.nome || "").toLowerCase().includes(search)
-    );
-  });
-
-  const container = document.getElementById("results");
-
-  if (results.length === 0) {
-    container.innerHTML = "<p>Nessun PFS trovato.</p>";
-    return;
-  }
-
-  container.innerHTML = results.map(pfs => `
-    <div class="pfs-item">
-      <strong>${pfs.code || ""}</strong>
-      <div>${pfs.comune || ""}</div>
-      <div>${pfs.nome || ""}</div>
-    </div>
-  `).join("");
-}
-
-  const container =
-    document.getElementById("results");
-
-  const search =
-    document.getElementById("search").value
-      .toLowerCase()
-      .trim();
-
-  let list = [...pfsList];
-
-  if (search) {
-
-    list = list.filter(p =>
-
-      p.code.toLowerCase().includes(search) ||
-
-      p.city.toLowerCase().includes(search)
-
-    );
-
-  }
-
-
-  if (userLat !== null) {
-
-    list.forEach(p => {
+    if (
+      userLat !== null &&
+      p.lat !== undefined &&
+      p.lng !== undefined
+    ) {
 
       p.distance =
         distance(
@@ -382,14 +410,36 @@ functfunction showPFS() {
           Number(p.lng)
         );
 
-    });
+    } else {
 
-    list.sort((a,b) =>
-      a.distance - b.distance
-    );
+      p.distance = undefined;
+
+    }
+
+  });
+
+
+  /* =========================
+     ORDINA PER DISTANZA
+  ========================= */
+
+  if (userLat !== null) {
+
+    list.sort(function(a, b) {
+
+      return (
+        (a.distance ?? Infinity) -
+        (b.distance ?? Infinity)
+      );
+
+    });
 
   }
 
+
+  /* =========================
+     NESSUN RISULTATO
+  ========================= */
 
   if (list.length === 0) {
 
@@ -404,64 +454,138 @@ functfunction showPFS() {
   }
 
 
+  /* =========================
+     MOSTRA RISULTATI
+  ========================= */
+
   container.innerHTML = "";
 
 
-  list.forEach((p,index) => {
+  list.forEach(function(p) {
+
+    const codice =
+      p.code || "";
+
+    const comune =
+      p.comune || p.city || "";
+
+    const nome =
+      p.nome || "";
+
 
     let distanceText = "";
 
+
     if (p.distance !== undefined) {
 
-      distanceText =
-        `<div class="distance">
+      distanceText = `
+        <div class="distance">
           📍 ${p.distance.toFixed(2)} km
-        </div>`;
+        </div>
+      `;
 
     }
 
 
-    container.innerHTML += `
+    let coordinate = "";
 
-      <div class="pfs">
 
-        <h3>${escapeHTML(p.code)}</h3>
+    if (
+      p.lat !== undefined &&
+      p.lng !== undefined
+    ) {
 
-        <div>
-          📍 ${escapeHTML(p.city)}
-        </div>
-
-        ${distanceText}
-
+      coordinate = `
         <div class="small">
           ${Number(p.lat).toFixed(6)},
           ${Number(p.lng).toFixed(6)}
         </div>
+      `;
 
-        <div class="actions">
+    }
 
-          <button
-            class="primary"
-            onclick="googleMaps(${p.lat},${p.lng})">
-            Google Maps
-          </button>
 
-          <button
-            class="dark"
-            onclick="appleMaps(${p.lat},${p.lng})">
-            Apple Maps
-          </button>
+    const div =
+      document.createElement("div");
 
-        </div>
+    div.className = "pfs";
+
+
+    div.innerHTML = `
+
+      <h3>
+        📡 ${escapeHTML(codice)}
+      </h3>
+
+      <div>
+        📍 <strong>Comune:</strong>
+        ${escapeHTML(comune)}
+      </div>
+
+      ${
+        nome
+          ? `<div>
+               <strong>Nome:</strong>
+               ${escapeHTML(nome)}
+             </div>`
+          : ""
+      }
+
+      ${distanceText}
+
+      ${coordinate}
+
+      <div class="actions">
 
         <button
-          onclick="deletePFS(${index})">
-          🗑 Elimina
+          class="primary"
+          onclick="googleMaps(
+            ${Number(p.lat)},
+            ${Number(p.lng)}
+          )">
+
+          Google Maps
+
+        </button>
+
+
+        <button
+          class="dark"
+          onclick="appleMaps(
+            ${Number(p.lat)},
+            ${Number(p.lng)}
+          )">
+
+          Apple Maps
+
         </button>
 
       </div>
 
+      <button
+        class="red"
+        onclick="deletePFSByObject(this)">
+
+        🗑 Elimina
+
+      </button>
+
     `;
+
+
+    /*
+       Salviamo il riferimento al PFS
+       per eliminare quello corretto
+       anche dopo una ricerca.
+    */
+
+    div.dataset.code = codice;
+    div.dataset.city = comune;
+
+    div._pfsObject = p;
+
+
+    container.appendChild(div);
 
   });
 
@@ -475,21 +599,36 @@ functfunction showPFS() {
 function addPFS() {
 
   const code =
-    document.getElementById("pfsCode").value.trim();
+    document.getElementById("pfsCode")
+      .value
+      .trim();
 
   const city =
-    document.getElementById("pfsCity").value.trim();
+    document.getElementById("pfsCity")
+      .value
+      .trim();
 
   const lat =
-    document.getElementById("pfsLat").value.trim();
+    document.getElementById("pfsLat")
+      .value
+      .trim();
 
   const lng =
-    document.getElementById("pfsLng").value.trim();
+    document.getElementById("pfsLng")
+      .value
+      .trim();
 
 
-  if (!code || !city || !lat || !lng) {
+  if (
+    !code ||
+    !city ||
+    !lat ||
+    !lng
+  ) {
 
-    alert("Compila tutti i campi.");
+    alert(
+      "Compila tutti i campi."
+    );
 
     return;
 
@@ -499,8 +638,11 @@ function addPFS() {
   pfsList.push({
 
     code: code,
+
     city: city,
+
     lat: Number(lat),
+
     lng: Number(lng)
 
   });
@@ -512,15 +654,29 @@ function addPFS() {
   );
 
 
-  document.getElementById("pfsCode").value = "";
-  document.getElementById("pfsCity").value = "";
-  document.getElementById("pfsLat").value = "";
-  document.getElementById("pfsLng").value = "";
+  document.getElementById(
+    "pfsCode"
+  ).value = "";
+
+  document.getElementById(
+    "pfsCity"
+  ).value = "";
+
+  document.getElementById(
+    "pfsLat"
+  ).value = "";
+
+  document.getElementById(
+    "pfsLng"
+  ).value = "";
 
 
   showPFS();
 
-  alert("✅ PFS salvato");
+
+  alert(
+    "✅ PFS salvato"
+  );
 
 }
 
@@ -529,18 +685,42 @@ function addPFS() {
    ELIMINA PFS
 ========================= */
 
-function deletePFS(index) {
+function deletePFSByObject(button) {
 
-  if (!confirm("Vuoi eliminare questo PFS?")) {
+  const card =
+    button.parentElement;
+
+  const pfsObject =
+    card._pfsObject;
+
+
+  if (
+    !confirm(
+      "Vuoi eliminare questo PFS?"
+    )
+  ) {
+
     return;
+
   }
 
-  pfsList.splice(index,1);
+
+  const index =
+    pfsList.indexOf(pfsObject);
+
+
+  if (index !== -1) {
+
+    pfsList.splice(index, 1);
+
+  }
+
 
   localStorage.setItem(
     "pfsList",
     JSON.stringify(pfsList)
   );
+
 
   showPFS();
 
@@ -551,13 +731,18 @@ function deletePFS(index) {
    GOOGLE MAPS
 ========================= */
 
-function googleMaps(lat,lng) {
+function googleMaps(lat, lng) {
 
   const url =
     "https://www.google.com/maps/dir/?api=1&destination="
-    + lat + "," + lng;
+    + lat
+    + ","
+    + lng;
 
-  window.open(url,"_blank");
+  window.open(
+    url,
+    "_blank"
+  );
 
 }
 
@@ -566,13 +751,18 @@ function googleMaps(lat,lng) {
    APPLE MAPS
 ========================= */
 
-function appleMaps(lat,lng) {
+function appleMaps(lat, lng) {
 
   const url =
     "https://maps.apple.com/?daddr="
-    + lat + "," + lng;
+    + lat
+    + ","
+    + lng;
 
-  window.open(url,"_blank");
+  window.open(
+    url,
+    "_blank"
+  );
 
 }
 
@@ -584,11 +774,31 @@ function appleMaps(lat,lng) {
 function escapeHTML(text) {
 
   return String(text)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
