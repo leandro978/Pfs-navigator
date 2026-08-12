@@ -54,8 +54,7 @@ function search(){
    return;
  }
 
- const isPfs = /^[A-Z]{2}\/\d+\/[A-Z0-9]+$/i.test(q);
-
+ const isPfs = /^[A-Za-z]{2}\/\d+\/[A-Za-z0-9-]+$/i;
  let found;
 
  if(isPfs){
