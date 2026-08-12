@@ -42,8 +42,6 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({
 ">":"&gt;",
 '"':"&quot;",
 "'":"&#39;"
-}[m]));
-
 function search(){
   const q = document.getElementById("q").value.trim();
 
@@ -52,13 +50,16 @@ function search(){
     return;
   }
 
-  const nq = normPfs(q);
+  const parts = norm(q).split(/\s+/).filter(Boolean);
 
   found = records.filter(r => {
-    const pfs = normPfs(r.pfs);
-    const comune = norm(r.comune || r.sheet || "");
+    const text = norm(
+      (r.pfs || "") + " " +
+      (r.nome || "") + " " +
+      (r.comune || r.sheet || "")
+    );
 
-    return pfs.includes(nq) || comune.includes(norm(q)) || norm(r.pfs).includes(norm(q));
+    return parts.every(p => text.includes(p));
   });
 
   found = found.slice(0,100);
@@ -69,7 +70,6 @@ function search(){
   }
 
   out.innerHTML = found.map(r => {
-
     const has = r.lat !== "" && r.lon !== "";
 
     const url = has
@@ -81,10 +81,12 @@ function search(){
 
     return `
     <div class="result">
-
       <div class="pfs">${esc(r.pfs || "PFS")}</div>
-
       <div class="comune">${esc(comune)}</div>
+
+      ${r.nome
+        ? '<div class="meta">🏷️ ' + esc(r.nome) + '</div>'
+        : ''}
 
       ${r.indirizzo
         ? '<div class="meta">📌 ' + esc(r.indirizzo) + '</div>'
@@ -95,7 +97,6 @@ function search(){
         : ''}
 
       <div class="actions">
-
         ${url
           ? '<a class="map" target="_blank" href="' + url + '">📍 Apri Maps</a>'
           : ''}
@@ -104,8 +105,10 @@ function search(){
           onclick="navigator.clipboard?.writeText(${JSON.stringify(r.pfs || "")})">
           Copia PFS
         </button>
-
       </div>
+    </div>`;
+  }).join("");
+}    </div>
 
     </div>`;
   }).join("");
