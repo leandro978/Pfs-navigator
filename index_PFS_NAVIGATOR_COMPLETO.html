@@ -46,10 +46,20 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({
 
 function search(){
 
- const q=norm(document.getElementById("q").value);
- const out=document.getElementById("out");
+ function search() {
+  const comune = document.getElementById("comune").value.trim().toLowerCase();
+  const codice = document.getElementById("pfs").value.trim().toLowerCase();
 
- if(q){
+  const risultati = records.filter(r => {
+    const nomeComune = String(r.sheet || "").toLowerCase();
+    const nomePfs = String(r.pfs || "").toLowerCase();
+
+    return (!comune || nomeComune.includes(comune)) &&
+           (!codice || nomePfs.includes(codice));
+  });
+
+  mostraRisultati(risultati);
+}
     const nq = norm(q);
     pool = pool.filter(x =>
         norm(x.code).includes(nq) ||
