@@ -58,7 +58,7 @@ function search(){
     const pfs = normPfs(r.pfs);
     const comune = norm(r.comune || r.sheet || "");
 
-    return pfs.includes(nq) || comune.includes(norm(q));
+    return pfs.includes(nq) || comune.includes(norm(q)) || norm(r.pfs).includes(norm(q));
   });
 
   found = found.slice(0,100);
