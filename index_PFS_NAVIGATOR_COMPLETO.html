@@ -110,18 +110,12 @@ function search(){
     </div>`;
   }).join("");
 }
-    const nq = norm(q);
-    pool = pool.filter(x =>
-        norm(x.code).includes(nq) ||
-        norm(x.comune).includes(nq)
-    );
-}
-   return;
+    
  }
 
- const isPfs=/^[A-Z]{2}\/\d{2}\/\d{2}[A-Z]\d{2}$/i.test(q.trim());
+ cons
 
-   const nq=normPfs(q);
+   c
 
    found=records.filter(r=>{
      return normPfs(r.pfs).includes(nq);
@@ -132,8 +126,8 @@ function search(){
    const parts=q.split(/\s+/).filter(Boolean);
 
 found=records.filter(r=>{
-  const text=normPfs(r.pfs);
-  return parts.every(p=>text.includes(normPfs(p)));
+  const text = normPfs((r.pfs || "") + " " + (r.nome || "") + " " + (r.comune || ""));
+return parts.every(p => text.includes(p));
 });found=found.slice(0,100);
 
  if(!found.length){
