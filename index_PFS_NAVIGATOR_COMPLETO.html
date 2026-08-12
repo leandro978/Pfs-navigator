@@ -49,8 +49,13 @@ function search(){
  const q=norm(document.getElementById("q").value);
  const out=document.getElementById("out");
 
- if(!q){
-   out.innerHTML='<div class="card empty">Scrivi un Comune o un codice PFS.</div>';
+ if(q){
+    const nq = norm(q);
+    pool = pool.filter(x =>
+        norm(x.code).includes(nq) ||
+        norm(x.comune).includes(nq)
+    );
+}
    return;
  }
 
