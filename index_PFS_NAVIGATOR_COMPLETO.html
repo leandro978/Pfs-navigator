@@ -45,20 +45,70 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({
 }[m]));
 
 function search(){
+  const q = document.getElementById("q").value.trim();
 
- function search() {
-  const comune = document.getElementById("comune").value.trim().toLowerCase();
-  const codice = document.getElementById("pfs").value.trim().toLowerCase();
+  if(!q){
+    out.innerHTML = "";
+    return;
+  }
 
-  const risultati = records.filter(r => {
-    const nomeComune = String(r.sheet || "").toLowerCase();
-    const nomePfs = String(r.pfs || "").toLowerCase();
+  const nq = normPfs(q);
 
-    return (!comune || nomeComune.includes(comune)) &&
-           (!codice || nomePfs.includes(codice));
+  found = records.filter(r => {
+    const pfs = normPfs(r.pfs);
+    const comune = norm(r.comune || r.sheet || "");
+
+    return pfs.includes(nq) || comune.includes(norm(q));
   });
 
-  mostraRisultati(risultati);
+  found = found.slice(0,100);
+
+  if(!found.length){
+    out.innerHTML = '<div class="card empty">❌ Nessun PFS trovato</div>';
+    return;
+  }
+
+  out.innerHTML = found.map(r => {
+
+    const has = r.lat !== "" && r.lon !== "";
+
+    const url = has
+      ? 'https://www.google.com/maps/search/?api=1&query=' +
+        encodeURIComponent(r.lat + ',' + r.lon)
+      : '';
+
+    const comune = r.comune || r.sheet || "";
+
+    return `
+    <div class="result">
+
+      <div class="pfs">${esc(r.pfs || "PFS")}</div>
+
+      <div class="comune">${esc(comune)}</div>
+
+      ${r.indirizzo
+        ? '<div class="meta">📌 ' + esc(r.indirizzo) + '</div>'
+        : ''}
+
+      ${has
+        ? '<div class="meta">📍 ' + esc(r.lat) + ', ' + esc(r.lon) + '</div>'
+        : ''}
+
+      <div class="actions">
+
+        ${url
+          ? '<a class="map" target="_blank" href="' + url + '">📍 Apri Maps</a>'
+          : ''}
+
+        <button class="copy"
+          onclick="navigator.clipboard?.writeText(${JSON.stringify(r.pfs || "")})">
+          Copia PFS
+        </button>
+
+      </div>
+
+    </div>`;
+  }).join("");
 }
     const nq = norm(q);
     pool = pool.filter(x =>
